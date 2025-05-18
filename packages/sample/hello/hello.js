@@ -5,24 +5,22 @@ async function main(args) {
   let name = args.name || 'stranger';
   let greeting = 'Hello ' + name + '!';
 
-  const dbUrl = process.env.DATABASE_URL;
-
-  if (!dbUrl) {
-    console.error('❌ DATABASE_URL is not defined');
-    return { statusCode: 500, body: 'DATABASE_URL is missing' };
-  }
+  // Use the provided connection string directly
+  const dbUrl = 'postgres://doadmin:AVNS_Ml9v4Iw73AA1xqOJlFw@db-postgresql-sgp1-03058-do-user-16324282-0.h.db.ondigitalocean.com:25060/defaultdb';
 
   // Parse and log parts of the connection string for debugging
+  let parsed;
   try {
-    const parsed = new URL(dbUrl);
+    parsed = new URL(dbUrl);
     console.log('🔍 Parsed DATABASE_URL:');
     console.log(' - Host:', parsed.hostname);
     console.log(' - Port:', parsed.port || 'default');
     console.log(' - User:', parsed.username);
     console.log(' - Database:', parsed.pathname?.slice(1));
-    console.log(' - SSL: enabled');
+    console.log(' - SSL: enabled\n');
   } catch (e) {
-    console.error('⚠️ Invalid DATABASE_URL format:', e.message);
+    console.error('⚠️ Invalid connection string format:', e.message);
+    return { statusCode: 500, body: 'Invalid connection string format' };
   }
 
   const client = new Client({
