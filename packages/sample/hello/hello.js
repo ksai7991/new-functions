@@ -3,24 +3,25 @@ const { URL } = require('url');
 
 async function main(args) {
   let name = args.name || 'stranger';
-  let greeting = 'Hello ' + name + '!';
 
-  // Use the provided connection string directly
-  const dbUrl = 'postgres://doadmin:AVNS_Ml9v4Iw73AA1xqOJlFw@db-postgresql-sgp1-03058-do-user-16324282-0.h.db.ondigitalocean.com:25060/defaultdb';
+  const dbUrl = process.env.DATABASE_URL;
+
+  if (!dbUrl) {
+    console.error('❌ DATABASE_URL is not defined');
+    return { statusCode: 500, body: 'DATABASE_URL is missing' };
+  }
 
   // Parse and log parts of the connection string for debugging
-  let parsed;
   try {
-    parsed = new URL(dbUrl);
+    const parsed = new URL(dbUrl);
     console.log('🔍 Parsed DATABASE_URL:');
     console.log(' - Host:', parsed.hostname);
     console.log(' - Port:', parsed.port || 'default');
     console.log(' - User:', parsed.username);
     console.log(' - Database:', parsed.pathname?.slice(1));
-    console.log(' - SSL: enabled\n');
+    console.log(' - SSL: enabled');
   } catch (e) {
-    console.error('⚠️ Invalid connection string format:', e.message);
-    return { statusCode: 500, body: 'Invalid connection string format' };
+    console.error('⚠️ Invalid DATABASE_URL format:', e.message);
   }
 
   const client = new Client({
@@ -30,13 +31,15 @@ async function main(args) {
     },
   });
 
+  let serverTime;
   try {
     console.log('🔌 Attempting to connect to PostgreSQL...');
     await client.connect();
     console.log('✅ Connected successfully!');
 
     const res = await client.query('SELECT NOW()');
-    console.log('🕒 Server time:', res.rows[0]);
+    serverTime = res.rows[0].now;
+    console.log('🕒 Server time:', serverTime);
 
     await client.end();
     console.log('🔌 Disconnected cleanly');
@@ -47,6 +50,7 @@ async function main(args) {
     return { statusCode: 500, body: 'Database connection failed: ' + err.message };
   }
 
+  let greeting = `Hello ${name}! Server time is ${serverTime}.`;
   return { body: greeting };
 }
 
